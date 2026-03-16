@@ -17,6 +17,12 @@
 - Q: How should order and shipment dates be provided and defaulted? -> A: User can specify both; default order date is current date in Pacific Standard Time, and default shipment date is one day after current date in Pacific Standard Time.
 - Q: Where should the authoritative sales-order schema come from? -> A: The sales-order schema is fully defined in this spec and does not depend on a separate template file.
 - Q: Which field is the canonical shipment split and filename key? -> A: `Channel` is the canonical shipment split and filename key.
+- Q: Missing Sales-Order Headers? -> A: Assemble headers from design fields.
+- Q: How is the tool delivered and invoked? -> A: Vanilla static web app — HTML, CSS, and JavaScript only; runs entirely in the browser with no backend server.
+- Q: Which JavaScript libraries are pre-approved for client-side file handling? -> A: SheetJS (xlsx) for CSV/XLSX read & write and JSZip for ZIP packaging, both loaded via CDN.
+- Q: How does the user supply the starting sequence number for multi-date runs in the web UI? -> A: Not needed — always default to sequence 1 for all dates.
+- Q: What is the web UI interaction model? -> A: Single page with two clearly separated sections — Section 1 for sales-order generation (file uploads + Generate button), Section 2 for shipment processing (master file upload + Process button).
+- Q: Should FR-005 (return next sequence number) and SC-007 be kept now that sequence always starts at 1? -> A: Remove both — returning the next sequence number is unnecessary since every run always starts at 1.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -55,16 +61,15 @@ A fulfillment user takes the generated order data and receives an updated master
 
 ### User Story 3 - Support repeatable runs with customer-type rules (Priority: P3)
 
-A data steward reruns the generator over time and needs the process to honor weekday restrictions and pricing behavior for Ecommerce, Retail, and Wholesale customers while also returning the next starting sequence number for future runs.
+A data steward reruns the generator over time and needs the process to honor weekday restrictions and pricing behavior for Ecommerce, Retail, and Wholesale customers.
 
-**Why this priority**: Repeatable execution and customer-type behavior are necessary for realistic demo data and for avoiding order-number collisions in future runs.
+**Why this priority**: Repeatable execution and customer-type behavior are necessary for realistic demo data.
 
-**Independent Test**: Can be fully tested by running the generator on different weekdays with mixed customer types and verifying type-specific scheduling, quantity and pricing behavior, and returned next-sequence values by order date.
+**Independent Test**: Can be fully tested by running the generator on different weekdays with mixed customer types and verifying type-specific scheduling, quantity and pricing behavior.
 
 **Acceptance Scenarios**:
 
-1. **Given** a completed generation run, **When** the process finishes, **Then** it returns the next starting sequence number for each generated order date as the last used sequence plus one.
-2. **Given** customers marked as Retail or Wholesale, **When** the order date does not match their allowed weekday, **Then** the system excludes those customer types from ineligible dates without breaking the overall daily order cap or order-number sequence rules.
+1. **Given** customers marked as Retail or Wholesale, **When** the order date does not match their allowed weekday, **Then** the system excludes those customer types from ineligible dates without breaking the overall daily order cap or order-number sequence rules.
 3. **Given** customers marked as Retail or Wholesale on their allowed weekday, **When** orders are generated, **Then** the system applies the required quantity and pricing behavior for that customer type.
 
 ### Edge Cases
@@ -94,9 +99,8 @@ A data steward reruns the generator over time and needs the process to honor wee
 - **FR-002**: The system MUST derive the sales-order processing date range from `OrderDate` using these rules: Tuesday through Friday generate for the current date only, Monday generates for the prior Saturday through Monday inclusive, and Saturday or Sunday generate for the current date only.
 - **FR-003**: The system MUST generate up to 20 unique orders for each date in the resolved sales-order processing range, with no individual date exceeding 20 orders.
 - **FR-003a**: If a date cannot reach 20 valid orders after applying eligibility and skip rules, the system MUST still produce all valid orders for that date and MUST mark that date as underfilled in processing output reporting.
-- **FR-004**: The system MUST assign each order a unique `OrderNumber` using the format `yyyyMMdd-sequenceNumber`, starting at the provided starting sequence for that date when supplied and increasing by one with no gaps for each subsequent order on the same date.
-- **FR-004a**: The system MUST accept an optional date-to-sequence input map; when a generated date is missing in that map, the starting sequence for that date MUST default to `1`.
-- **FR-005**: The system MUST return the next starting sequence number for every generated order date as the largest sequence used for that date plus one.
+- **FR-004**: The system MUST assign each order a unique `OrderNumber` using the format `yyyyMMdd-sequenceNumber`, starting at sequence `1` for each date and increasing by one with no gaps for each subsequent order on the same date.
+- **FR-004a**: The starting sequence number for every generated date MUST always be `1`. No date-to-sequence input map is accepted or required.
 - **FR-006**: The system MUST create one unique `ChannelOrderID` per order and keep it stable across all rows belonging to that order.
 - **FR-007**: The system MUST use `CustomerCode` as the customer key and MUST pair `CustomerCode` and `CustomerName` from the same customer-source row.
 - **FR-008**: The system MUST populate channel assignment values for each order from a single matching customer-to-channel mapping row so that `ChannelNum` and `ChannelAccountNum` remain consistent within the order.
@@ -132,7 +136,7 @@ A data steward reruns the generator over time and needs the process to honor wee
 - **NFR-002 Output Reliability**: The workflow MUST either complete with all required deliverables for the requested run or fail with clear validation feedback before any incomplete deliverable is treated as finished output. When skip-and-report conditions occur, completion output MUST include transparent skip reporting.
 - **NFR-003 Processing Performance**: A standard run covering the maximum implied three-day window and its related shipment packaging MUST complete within 1 minute on a normal business workstation.
 - **NFR-004 Data Protection**: The workflow MUST not overwrite existing tracking numbers, MUST not alter source files, and MUST limit changes in the updated shipment master file to the allowed tracking-number completion only.
-- **NFR-005 Auditability**: Each run MUST make it possible to verify the resolved processing window, generated order counts by date, and returned next-sequence values for future reruns.
+- **NFR-005 Auditability**: Each run MUST make it possible to verify the resolved processing window and generated order counts by date.
 - **NFR-005a Timezone Consistency**: Date default resolution MUST use Pacific Standard Time consistently for both `OrderDate` and `ShipmentDate`.
 - **NFR-006 Variability Policy**: The workflow MUST document that outputs are intentionally non-deterministic and MUST not claim deterministic replayability for identical inputs.
 
@@ -145,17 +149,31 @@ A data steward reruns the generator over time and needs the process to honor wee
 - **Sales Order Line**: A line within a sales order that carries one SKU, quantity, unit price, extended amount, and shipment-relevant quantities.
 - **Shipment Order Group**: The collection of shipment rows sharing the same `ChannelOrderID`, which must remain together for carrier assignment, tracking-number assignment, and downstream channel outputs.
 - **Channel Shipment File**: A channel-specific shipment file (CSV or XLSX) containing only rows for one `Channel` value, expressed in the required shipment header structure.
-- **Sequence State**: The date-specific record of the last used order sequence that determines the next valid starting sequence for future runs.
+
+### Canonical Sales Order Schema
+
+The sales order output must contain exactly the following headers in this order:
+`OrderNumber`, `ChannelOrderID`, `CustomerCode`, `CustomerName`, `Channel`, `ChannelNum`, `ChannelAccountNum`, `OrderDate`, `ShipToName`, `ShipToFirstName`, `ShipToLastName`, `ShipToCompany`, `ShipToAddressLine1`, `ShipToAddressLine2`, `ShipToAddressLine3`, `ShipToCity`, `ShipToState`, `ShipToPostalCode`, `ShipToCounty`, `ShipToCountry`, `ShipToEmail`, `ShipToDaytimePhone`, `BillToName`, `BillToCompany`, `BillToAddressLine1`, `BillToAddressLine2`, `BillToAddressLine3`, `BillToCity`, `BillToState`, `BillToPostalCode`, `BillToCounty`, `BillToCountry`, `BillToEmail`, `BillToDaytimePhone`, `SKU`, `OrderQty`, `Price`, `ExtAmount`, `SubTotalAmount`, `DiscountAmount`, `TaxAmount`, `ShippingAmount`, `TotalAmount`, `OrderType`, `OrderStatus`, `Currency`, `UOM`, `Stockable`, `Costable`, `Taxable`, `IsProfit`, `ShipQty`, `OpenQty`, `Financial Status`, `Fulfillment Status`, `PaidAmount`, `Balance`.
+
+### Delivery & Technical Constraints
+
+- The tool MUST be implemented as a vanilla static web app using HTML, CSS, and JavaScript only.
+- The tool MUST run entirely in the browser with no backend server or server-side processing.
+- All file reading (CSV/XLSX inputs) and file writing (CSV/XLSX/ZIP outputs) MUST be performed client-side within the browser.
+- No build toolchain, framework (React, Vue, etc.), or server runtime is permitted unless explicitly approved.
+- The implementation MUST use **SheetJS** (`xlsx`) for reading and writing CSV and XLSX files and **JSZip** for creating ZIP packages, both loaded via CDN. No other third-party file-handling library may be substituted without explicit approval.
+- The web app MUST be implemented as a **single HTML page** with two clearly separated UI sections:
+  - **Section 1 — Sales Order Generation**: file upload controls for the three source files (customer, customer-channel mapping, SKU), optional `OrderDate` and `ShipmentDate` date inputs, output format selectors, and a Generate button.
+  - **Section 2 — Shipment Processing**: a file upload control for the master shipment dataset and a Process button; outputs the updated master file, per-channel files, and ZIP package.
 
 ## Assumptions
-
 - Statements that say "generate exactly `OrdersToGenerate` orders" are interpreted as "generate 20 orders per eligible date," because the same design also states that Monday runs must generate 20 orders for each date in the Saturday-through-Monday window.
 - If the resolved run window does not contain an allowed weekday for Retail or Wholesale customers, those customer types produce no orders in that run rather than forcing orders onto an invalid day.
 - `Channel` is the canonical shipment split and filename key, while `ChannelNum` and `ChannelAccountNum` remain supporting mapped identifiers.
-- The exact sales-order header list will be maintained directly in this specification as the authoritative schema definition for implementation and validation.
-- If no starting sequence is supplied for a generated order date, that date starts at sequence `1`.
-- If `OrderDate` is omitted, the runtime resolves it from current Pacific Standard Time date.
-- If `ShipmentDate` is omitted, the runtime resolves it to one day after current Pacific Standard Time date.
+- The exact sales-order header list is maintained directly in this specification as the authoritative schema definition for implementation and validation.
+- The starting sequence number for every order date is always `1`; no per-date sequence input is accepted.
+- If `OrderDate` is omitted, the runtime resolves it from the current Pacific Standard Time date.
+- If `ShipmentDate` is omitted, the runtime resolves it to one day after the current Pacific Standard Time date.
 
 ## Success Criteria *(mandatory)*
 
@@ -167,7 +185,6 @@ A data steward reruns the generator over time and needs the process to honor wee
 - **SC-004**: 100% of generated orders comply with applicable SKU uniqueness, quantity, pricing, and order-total rules for their customer type.
 - **SC-005**: 100% of shipment order groups exit processing with exactly one carrier and one shared tracking number, while 100% of pre-existing tracking numbers remain unchanged.
 - **SC-006**: Every shipment run produces one updated master shipment file, one file per distinct channel, and one ZIP package containing all required shipment deliverables.
-- **SC-007**: After each run, the system returns next starting sequence values for every generated order date with zero sequence collisions when those returned values are used for the next run.
-- **SC-008**: When unmapped or ambiguously mapped customers are present, 100% of skipped customers are reported with explicit reason codes, and no skipped customer appears in generated sales orders.
-- **SC-009**: When any date is underfilled, 100% of underfilled dates are reported with expected-versus-generated counts and no false claim of full 20-order completion for those dates.
-- **SC-010**: When `OrderDate` and/or `ShipmentDate` are omitted, 100% of runs resolve defaults using Pacific Standard Time rules (`OrderDate` = current date, `ShipmentDate` = current date + 1 day).
+- **SC-007**: When unmapped or ambiguously mapped customers are present, 100% of skipped customers are reported with explicit reason codes, and no skipped customer appears in generated sales orders.
+- **SC-008**: When any date is underfilled, 100% of underfilled dates are reported with expected-versus-generated counts and no false claim of full 20-order completion for those dates.
+- **SC-009**: When `OrderDate` and/or `ShipmentDate` are omitted, 100% of runs resolve defaults using Pacific Standard Time rules (`OrderDate` = current date, `ShipmentDate` = current date + 1 day).
