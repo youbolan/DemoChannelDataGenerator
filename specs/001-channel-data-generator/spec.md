@@ -23,6 +23,11 @@
 - Q: How does the user supply the starting sequence number for multi-date runs in the web UI? -> A: Not needed — always default to sequence 1 for all dates.
 - Q: What is the web UI interaction model? -> A: Single page with two clearly separated sections — Section 1 for sales-order generation (file uploads + Generate button), Section 2 for shipment processing (master file upload + Process button).
 - Q: Should FR-005 (return next sequence number) and SC-007 be kept now that sequence always starts at 1? -> A: Remove both — returning the next sequence number is unnecessary since every run always starts at 1.
+- Q: When processing the shipment master file, should the system update only `Tracking Number`, or also update `Carrier` in the master file? -> A: Update both `Tracking Number` and `Carrier` in the master shipment file.
+- Q: Which shipment master input schemas should the system accept? -> A: Accept both the generated sales-order output schema and a shipment-oriented master dataset, with normalization of documented header aliases as needed.
+- Q: How strict should shipment-input header alias normalization be? -> A: Support the documented alias list with case-insensitive and spacing-insensitive matching, but do not use fuzzy matching beyond that.
+- Q: How should `ShipmentDate` interact with `Ship Date` values during shipment processing? -> A: Channel output files always use the run's `ShipmentDate` value; the updated master file keeps any existing `Ship Date` values unchanged.
+- Q: If the shipment input uses the sales-order schema, how should the updated master shipment file be formed? -> A: Append the required shipment-processing columns to create the updated master file while preserving original row order.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -46,7 +51,7 @@ An operations user uploads the customer source, customer-to-channel mapping, and
 
 ### User Story 2 - Produce shipment files and ZIP package (Priority: P2)
 
-A fulfillment user takes the generated order data and receives an updated master shipment file, one shipment file per channel, and a ZIP package that contains all shipment outputs, using the selected shipment output format.
+A fulfillment user uploads either the generated sales-order output or a compatible shipment-oriented master dataset and receives an updated master shipment file, one shipment file per channel, and a ZIP package that contains all shipment outputs, using the selected shipment output format.
 
 **Why this priority**: Shipment output is the next business-critical step after order generation and is required to support channel fulfillment testing.
 
@@ -82,6 +87,11 @@ A data steward reruns the generator over time and needs the process to honor wee
 - A customer has blank shipping fields, blank billing fields, or both, requiring fallback population without leaving any required address field empty.
 - A customer maps to multiple channel-account rows or has no matching mapping row; the system must skip that customer for the run, continue processing eligible customers, and report the skip reason.
 - An order group already contains a tracking number on one row; the existing tracking number must be reused for the rest of the order group rather than replaced.
+- An order group has no carrier value in the master shipment dataset; the system must assign one allowed carrier for that group and write it consistently to the updated master shipment file and channel outputs.
+- A shipment master upload uses either sales-order headers or shipment-oriented headers with documented aliases; unsupported header names must fail with clear validation feedback rather than being guessed.
+- A shipment master upload uses documented aliases that differ only by case or spacing; the system must normalize them successfully without requiring fuzzy interpretation of unrelated header names.
+- A shipment-oriented master dataset already contains `Ship Date` values; shipment processing must preserve those values in the updated master file while still using the run-level `ShipmentDate` for channel output files.
+- A shipment upload uses the sales-order output schema and therefore lacks shipment-processing columns such as `Carrier` and `Tracking Number`; the system must append the documented shipment-processing columns when forming the updated master shipment file.
 - A channel name includes filename-invalid characters; the generated channel output filename must remain recognizable while becoming filesystem-safe.
 - A row has `ChannelNum` and `ChannelAccountNum` but lacks a valid `Channel` value needed for shipment splitting and filenames.
 - The resolved date window contains no valid weekday for Retail or Wholesale customers; those customer types produce no orders for that run.
@@ -115,10 +125,14 @@ A data steward reruns the generator over time and needs the process to honor wee
 - **FR-015**: The system MUST apply the stated discount, tax, shipping-charge, payment, default-value, and status rules consistently so that subtotal, paid amount, balance, and total amount remain internally consistent on every order.
 - **FR-016**: The system MUST restrict customer-type scheduling as follows: Ecommerce orders follow the general date logic, Retail orders may only be placed on Monday, and Wholesale orders may only be placed on Wednesday.
 - **FR-017**: The system MUST include in the order output all fields required for downstream shipment processing, including `Channel` as the canonical shipment grouping field and the identifiers needed to preserve order grouping, channel grouping, SKU, and ship quantity relationships.
-- **FR-017a**: The system MUST apply `ShipmentDate` consistently to shipment outputs and processing context for the run.
+- **FR-017a**: The system MUST apply `ShipmentDate` consistently to channel shipment outputs and shipment-processing context for the run.
 - **FR-018**: Before releasing the sales-order output, the system MUST validate that every row matches the canonical sales-order schema defined in this specification, including exact header names, header order, and header column count, and MUST also verify that every order number sequence is gap-free by date, no required address field is blank, no order total violates its allowed range, and no SKU repeats within the same order.
-- **FR-019**: The system MUST support shipment processing from the generated order data or its shipment-derived master dataset by grouping rows with the same `ChannelOrderID` as a single order.
-- **FR-020**: During shipment processing, the system MUST preserve the original master dataset row order and original master schema and MUST modify only missing tracking-number values.
+- **FR-019**: The system MUST support shipment processing from either the generated sales-order output schema or a shipment-oriented master dataset by grouping rows with the same `ChannelOrderID` business identifier as a single order.
+- **FR-019a**: The system MUST normalize documented shipment-input header aliases needed to support the accepted shipment master schemas using case-insensitive and spacing-insensitive matching while preserving one canonical business meaning per field and failing with clear validation feedback on unsupported headers.
+- **FR-019b**: The documented shipment-input alias set MUST include at least these canonical mappings: `ChannelOrderID` <- `ChannelOrderID`, `Channel Order ID`, `channelOrderID`; `OrderQty` <- `OrderQty`, `Order Qty`; `Channel` <- `Channel`; `Carrier` <- `Carrier`; `Tracking Number` <- `Tracking Number`; `Ship Date` <- `Ship Date`; `SKU` <- `SKU`.
+- **FR-020**: During shipment processing, the system MUST preserve the original master dataset row order. For shipment-oriented master inputs, the system MUST preserve the original master schema and MUST modify only the `Tracking Number` and `Carrier` fields when completing shipment data for an order group.
+- **FR-020a**: When the uploaded shipment master dataset already contains a `Ship Date` field, the updated master file MUST preserve the original `Ship Date` values rather than replacing them with the run-level `ShipmentDate`.
+- **FR-020b**: When the uploaded shipment input uses the generated sales-order output schema, the system MUST create the updated master shipment file by appending the documented shipment-processing columns required for shipment completion while preserving the original sales-order columns and row order.
 - **FR-021**: During shipment processing, the system MUST assign one carrier to each order group, using only the allowed carrier options when a carrier is not already set, and all rows in the same order group MUST share that carrier.
 - **FR-022**: The system MUST reuse an existing tracking number for an order group when any row in that group already has one; otherwise it MUST generate one new tracking number for the order group, apply it to all rows in the group, and ensure the generated value does not already exist elsewhere in the dataset.
 - **FR-023**: The system MUST create one shipment output file per distinct `Channel` value in the selected shipment output format, and each channel file MUST use the exact required shipment header names and header order.
@@ -135,7 +149,7 @@ A data steward reruns the generator over time and needs the process to honor wee
 - **NFR-001a Format Consistency**: The selected sales-order and shipment output formats MUST be applied consistently to all generated artifacts in their respective output groups for a run.
 - **NFR-002 Output Reliability**: The workflow MUST either complete with all required deliverables for the requested run or fail with clear validation feedback before any incomplete deliverable is treated as finished output. When skip-and-report conditions occur, completion output MUST include transparent skip reporting.
 - **NFR-003 Processing Performance**: A standard run covering the maximum implied three-day window and its related shipment packaging MUST complete within 1 minute on a normal business workstation.
-- **NFR-004 Data Protection**: The workflow MUST not overwrite existing tracking numbers, MUST not alter source files, and MUST limit changes in the updated shipment master file to the allowed tracking-number completion only.
+- **NFR-004 Data Protection**: The workflow MUST not overwrite existing tracking numbers, MUST not alter source files, and MUST limit changes in the updated shipment master file to the allowed `Tracking Number` and `Carrier` completion only.
 - **NFR-005 Auditability**: Each run MUST make it possible to verify the resolved processing window and generated order counts by date.
 - **NFR-005a Timezone Consistency**: Date default resolution MUST use Pacific Standard Time consistently for both `OrderDate` and `ShipmentDate`.
 - **NFR-006 Variability Policy**: The workflow MUST document that outputs are intentionally non-deterministic and MUST not claim deterministic replayability for identical inputs.
