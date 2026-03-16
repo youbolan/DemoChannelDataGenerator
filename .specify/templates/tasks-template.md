@@ -8,7 +8,9 @@ description: "Task list template for feature implementation"
 **Input**: Design documents from `/specs/[###-feature-name]/`
 **Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/
 
-**Tests**: The examples below include test tasks. Tests are OPTIONAL - only include them if explicitly requested in the feature specification.
+**Tests**: The examples below include test tasks. Story-specific tests are
+OPTIONAL unless requested in the feature spec, but constitution-driven
+verification (accessibility, performance, privacy/security checks) is REQUIRED.
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
@@ -154,7 +156,10 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] TXXX Code cleanup and refactoring
 - [ ] TXXX Performance optimization across all stories
 - [ ] TXXX [P] Additional unit tests (if requested) in tests/unit/
-- [ ] TXXX Security hardening
+- [ ] TXXX Accessibility verification (automated and keyboard walkthrough)
+- [ ] TXXX Performance budget validation (LCP, INP, CLS, payload)
+- [ ] TXXX Security hardening and third-party script review
+- [ ] TXXX Static deploy and preview validation
 - [ ] TXXX Run quickstart.md validation
 
 ---
@@ -245,6 +250,7 @@ With multiple developers:
 - [P] tasks = different files, no dependencies
 - [Story] label maps task to specific user story for traceability
 - Each user story should be independently completable and testable
+- Always include constitution compliance tasks before final sign-off
 - Verify tests fail before implementing
 - Commit after each task or logical group
 - Stop at any checkpoint to validate story independently

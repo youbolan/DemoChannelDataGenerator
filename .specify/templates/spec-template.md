@@ -95,6 +95,17 @@
 - **FR-006**: System MUST authenticate users via [NEEDS CLARIFICATION: auth method not specified - email/password, SSO, OAuth?]
 - **FR-007**: System MUST retain user data for [NEEDS CLARIFICATION: retention period not specified]
 
+### Non-Functional Requirements
+
+- **NFR-001 Accessibility**: User-facing flows MUST meet WCAG 2.2 AA, including
+  keyboard navigation, semantic structure, and contrast requirements.
+- **NFR-002 Performance**: Feature MUST declare measurable budgets for Core Web
+  Vitals (LCP, INP, CLS) and asset weight, with validation method.
+- **NFR-003 Privacy/Security**: Solution MUST avoid client-side secrets, justify
+  third-party scripts, and document data exposure risks.
+- **NFR-004 Static Delivery**: Feature MUST work in static hosting constraints,
+  or explicitly document approved runtime exceptions.
+
 ### Key Entities *(include if feature involves data)*
 
 - **[Entity 1]**: [What it represents, key attributes without implementation]
@@ -113,3 +124,5 @@
 - **SC-002**: [Measurable metric, e.g., "System handles 1000 concurrent users without degradation"]
 - **SC-003**: [User satisfaction metric, e.g., "90% of users successfully complete primary task on first attempt"]
 - **SC-004**: [Business metric, e.g., "Reduce support tickets related to [X] by 50%"]
+- **SC-005**: [Accessibility metric, e.g., "Critical journeys pass automated WCAG checks and manual keyboard-only walkthrough"]
+- **SC-006**: [Performance metric, e.g., "Core pages meet agreed LCP/INP/CLS budgets on representative mobile profile"]

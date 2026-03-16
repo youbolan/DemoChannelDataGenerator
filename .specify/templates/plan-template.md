@@ -31,7 +31,19 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+- `Static-First Architecture`: Confirm the design ships as static assets with no
+  required server runtime, or document an approved exception.
+- `Accessibility as a Release Gate`: Define how WCAG 2.2 AA will be verified,
+  including automated checks and manual keyboard testing.
+- `Performance Budgets`: Define feature-level budgets (LCP, INP, CLS, payload)
+  and the measurement method for verification.
+- `Privacy and Security by Default`: Confirm no secrets in client code, justify
+  third-party scripts, and list release hardening checks.
+- `Verifiable Quality Before Publish`: Map acceptance scenarios to objective
+  tests and preview validation evidence required for sign-off.
+
+If any item fails, record a justified exception in `Complexity Tracking` and
+obtain maintainer approval before implementation.
 
 ## Project Structure
 
