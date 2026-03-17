@@ -47,6 +47,7 @@
     ChannelOrderID: ["ChannelOrderID", "Channel Order ID", "channelOrderID"],
     OrderQty: ["OrderQty", "Order Qty"],
     Channel: ["Channel"],
+    CustomerNumber: ["CustomerNumber", "Customer #", "CustomerCode", "Customer Code"],
     Carrier: ["Carrier"],
     TrackingNumber: ["Tracking Number"],
     ShipDate: ["Ship Date"],
