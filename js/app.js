@@ -138,18 +138,10 @@
     }
   }
 
-  async function fetchVersion() {
-    try {
-      const response = await fetch('version.txt');
-      if (response.ok) {
-        const version = await response.text();
-        const display = document.getElementById("version-display");
-        if (display && version.trim()) {
-          display.textContent = version.trim();
-        }
-      }
-    } catch (error) {
-      console.warn("Could not fetch version.txt:", error);
+  function fetchVersion() {
+    const display = document.getElementById("version-display");
+    if (display && window.APP_VERSION) {
+      display.textContent = window.APP_VERSION;
     }
   }
 
