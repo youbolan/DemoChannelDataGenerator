@@ -36,7 +36,10 @@
     container.dataset.state = "success";
     container.setAttribute("role", "status");
     container.innerHTML = `
-      <h3>Sales Order Generation Complete</h3>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3>Sales Order Generation Complete</h3>
+        ${result.downloadUrl ? `<a href="${utils.escapeHtml(result.downloadUrl)}" download="${utils.escapeHtml(result.downloadFilename)}" style="background-color: #0b4d3c; color: #fff; padding: 0.5rem 1rem; border-radius: 4px; text-decoration: none; font-weight: bold; display: inline-block;">Download Orders</a>` : ""}
+      </div>
       <p><strong>Resolved Date Range:</strong> ${utils.escapeHtml(result.summary.resolvedDateRange.join(", "))}</p>
       <p><strong>Shipment Date:</strong> ${utils.escapeHtml(result.summary.shipmentDate)}</p>
       <p><strong>Total Rows Generated:</strong> ${result.summary.totalRows}</p>
@@ -55,7 +58,10 @@
     container.dataset.state = "success";
     container.setAttribute("role", "status");
     container.innerHTML = `
-      <h3>Shipment Processing Complete</h3>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3>Shipment Processing Complete</h3>
+        ${result.downloadUrl ? `<a href="${utils.escapeHtml(result.downloadUrl)}" download="${utils.escapeHtml(result.downloadFilename)}" style="background-color: #0b4d3c; color: #fff; padding: 0.5rem 1rem; border-radius: 4px; text-decoration: none; font-weight: bold; display: inline-block;">Download Shipments</a>` : ""}
+      </div>
       <p><strong>Total Rows Processed:</strong> ${result.summary.totalRowsProcessed}</p>
       <p><strong>Tracking Numbers Generated:</strong> ${result.summary.trackingNumbersGenerated}</p>
       <p><strong>Tracking Numbers Reused:</strong> ${result.summary.trackingNumbersReused}</p>
@@ -69,17 +75,12 @@
   function setDefaultDates() {
     const orderDateInput = document.getElementById("order-date");
     const shipmentDateInput = document.getElementById("shipment-date");
-    orderDateInput.value = dateResolver.resolveDateRange()[0].isoDate;
+    orderDateInput.value = utils.formatIsoDate(dateResolver.getPacificToday());
     shipmentDateInput.value = dateResolver.resolveShipmentDate().isoDate;
   }
 
   function toggleButtonState() {
-    document.getElementById("generate-btn").disabled = !(
-      document.getElementById("customer-file").files[0]
-      && document.getElementById("mapping-file").files[0]
-      && document.getElementById("sku-file").files[0]
-    );
-
+    document.getElementById("generate-btn").disabled = false;
     document.getElementById("process-btn").disabled = !document.getElementById("shipment-master-file").files[0];
   }
 
@@ -102,6 +103,10 @@
 
       const output = fileIO.writeFile(generation.rows, generation.headers, generation.filename, outputFormat);
       fileIO.downloadFile(output.blob, output.filename);
+      
+      generation.downloadUrl = URL.createObjectURL(output.blob);
+      generation.downloadFilename = output.filename;
+      
       renderOrderSummary(results, generation);
     } catch (error) {
       renderError(results, error);
@@ -123,6 +128,10 @@
       });
 
       fileIO.downloadFile(result.zipBlob, result.zipFilename);
+      
+      result.downloadUrl = URL.createObjectURL(result.zipBlob);
+      result.downloadFilename = result.zipFilename;
+      
       renderShipmentSummary(results, result);
     } catch (error) {
       renderError(results, error);
@@ -131,6 +140,7 @@
 
   function init() {
     setDefaultDates();
+    toggleButtonState();
 
     [
       "customer-file",
@@ -142,6 +152,18 @@
     });
 
     document.getElementById("sales-order-form").addEventListener("submit", handleSalesOrderSubmit);
+    
+    const generateDefaultBtn = document.getElementById("generate-default-btn");
+    if (generateDefaultBtn) {
+      generateDefaultBtn.addEventListener("click", (event) => {
+        event.preventDefault();
+        document.getElementById("customer-file").value = "";
+        document.getElementById("mapping-file").value = "";
+        document.getElementById("sku-file").value = "";
+        handleSalesOrderSubmit(event);
+      });
+    }
+    
     document.getElementById("shipment-form").addEventListener("submit", handleShipmentSubmit);
   }
 

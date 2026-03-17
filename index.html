@@ -9,6 +9,7 @@
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <script defer src="js/utils.js"></script>
+  <script defer src="js/defaultData.js"></script>
   <script defer src="js/fileIO.js"></script>
   <script defer src="js/validators.js"></script>
   <script defer src="js/dateResolver.js"></script>
@@ -33,7 +34,7 @@
       <form id="sales-order-form" novalidate>
         <fieldset>
           <legend>Sales Order Inputs</legend>
-          <div class="field-grid">
+          <div class="form-row">
             <label class="field">
               <span>Customer Source File</span>
               <input id="customer-file" type="file" accept=".csv,.xlsx">
@@ -46,6 +47,8 @@
               <span>SKU Source File</span>
               <input id="sku-file" type="file" accept=".csv,.xlsx">
             </label>
+          </div>
+          <div class="form-row">
             <label class="field">
               <span>Order Date</span>
               <input id="order-date" type="date">
@@ -54,16 +57,19 @@
               <span>Shipment Date</span>
               <input id="shipment-date" type="date">
             </label>
-            <label class="field">
+          </div>
+          <div class="form-row align-end">
+            <label class="field" style="flex: 1;">
               <span>Sales Order Output Format</span>
               <select id="order-output-format">
                 <option value="csv">CSV</option>
                 <option value="xlsx">XLSX</option>
               </select>
             </label>
-          </div>
-          <div class="button-row">
-            <button id="generate-btn" type="submit" disabled>Generate Sales Orders</button>
+            <div class="inline-buttons" style="flex: 2;">
+              <button id="generate-btn" type="submit" disabled>Generate Sales Orders</button>
+              <button id="generate-default-btn" type="button">Generate from default data</button>
+            </div>
           </div>
         </fieldset>
       </form>

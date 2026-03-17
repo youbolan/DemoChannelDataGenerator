@@ -2,7 +2,7 @@
   const app = global.DemoChannelDataGenerator || (global.DemoChannelDataGenerator = {});
   const { addressEngine, dateResolver, fileIO, pricingEngine, utils, validators } = app;
 
-  const CUSTOMER_REQUIRED_COLUMNS = ["CustomerCode", "CustomerName", "Type"];
+  const CUSTOMER_REQUIRED_COLUMNS = ["CustomerCode", "CustomerName"];
   const MAPPING_REQUIRED_COLUMNS = ["CustomerCode", "Channel", "ChannelNum", "ChannelAccountNum"];
   const SKU_REQUIRED_COLUMNS = ["SKU"];
 
@@ -40,65 +40,72 @@
   }
 
   function buildOrderRow(shared, line, totals) {
-    return {
-      OrderNumber: shared.OrderNumber,
-      ChannelOrderID: shared.ChannelOrderID,
-      CustomerCode: shared.CustomerCode,
-      CustomerName: shared.CustomerName,
-      Channel: shared.Channel,
-      ChannelNum: shared.ChannelNum,
-      ChannelAccountNum: shared.ChannelAccountNum,
-      OrderDate: shared.OrderDate,
-      ShipToName: shared.ShipToName,
-      ShipToFirstName: shared.ShipToFirstName,
-      ShipToLastName: shared.ShipToLastName,
-      ShipToCompany: shared.ShipToCompany,
-      ShipToAddressLine1: shared.ShipToAddressLine1,
-      ShipToAddressLine2: shared.ShipToAddressLine2,
-      ShipToAddressLine3: shared.ShipToAddressLine3,
-      ShipToCity: shared.ShipToCity,
-      ShipToState: shared.ShipToState,
-      ShipToPostalCode: shared.ShipToPostalCode,
-      ShipToCounty: shared.ShipToCounty,
-      ShipToCountry: shared.ShipToCountry,
-      ShipToEmail: shared.ShipToEmail,
-      ShipToDaytimePhone: shared.ShipToDaytimePhone,
-      BillToName: shared.BillToName,
-      BillToCompany: shared.BillToCompany,
-      BillToAddressLine1: shared.BillToAddressLine1,
-      BillToAddressLine2: shared.BillToAddressLine2,
-      BillToAddressLine3: shared.BillToAddressLine3,
-      BillToCity: shared.BillToCity,
-      BillToState: shared.BillToState,
-      BillToPostalCode: shared.BillToPostalCode,
-      BillToCounty: shared.BillToCounty,
-      BillToCountry: shared.BillToCountry,
-      BillToEmail: shared.BillToEmail,
-      BillToDaytimePhone: shared.BillToDaytimePhone,
-      SKU: line.SKU,
-      OrderQty: line.OrderQty,
-      Price: line.Price,
-      ExtAmount: line.ExtAmount,
-      SubTotalAmount: totals.SubTotalAmount,
-      DiscountAmount: totals.DiscountAmount,
-      TaxAmount: totals.TaxAmount,
-      ShippingAmount: totals.ShippingAmount,
-      TotalAmount: totals.TotalAmount,
-      OrderType: 1,
-      OrderStatus: 0,
-      Currency: "USD",
-      UOM: "EA",
-      Stockable: "TRUE",
-      Costable: "TRUE",
-      Taxable: "TRUE",
-      IsProfit: "TRUE",
-      ShipQty: 0,
-      OpenQty: line.OrderQty,
-      "Financial Status": " ",
-      "Fulfillment Status": " ",
-      PaidAmount: 0,
-      Balance: totals.Balance,
-    };
+    const row = {};
+    validators.SALES_ORDER_HEADERS.forEach(header => {
+      row[header] = "";
+    });
+
+    row.OrderNumber = shared.OrderNumber;
+    row.OrderType = "1";
+    row.OrderStatus = "0";
+    row.OrderDate = shared.OrderDate;
+    row.CustomerCode = shared.CustomerCode;
+    row.CustomerName = shared.CustomerName;
+    row.Currency = "USD";
+    row.SubTotalAmount = totals.SubTotalAmount;
+    row.TotalAmount = totals.TotalAmount;
+    row.TaxAmount = totals.TaxAmount;
+    row.DiscountAmount = totals.DiscountAmount;
+    row.ShippingAmount = totals.ShippingAmount;
+    row.PaidAmount = "0";
+    row.Balance = totals.Balance;
+    row["Fulfillment Status"] = " ";
+    row["Financial Status"] = " ";
+    row.ChannelNum = shared.ChannelNum;
+    row.ChannelAccountNum = shared.ChannelAccountNum;
+    row.ChannelOrderID = shared.ChannelOrderID;
+
+    row.ShipToName = shared.ShipToName;
+    row.ShipToFirstName = shared.ShipToFirstName;
+    row.ShipToLastName = shared.ShipToLastName;
+    row.ShipToCompany = shared.ShipToCompany;
+    row.ShipToAddressLine1 = shared.ShipToAddressLine1;
+    row.ShipToAddressLine2 = shared.ShipToAddressLine2;
+    row.ShipToAddressLine3 = shared.ShipToAddressLine3;
+    row.ShipToCity = shared.ShipToCity;
+    row.ShipToState = shared.ShipToState;
+    row.ShipToPostalCode = shared.ShipToPostalCode;
+    row.ShipToCounty = shared.ShipToCounty;
+    row.ShipToCountry = shared.ShipToCountry;
+    row.ShipToEmail = shared.ShipToEmail;
+    row.ShipToDaytimePhone = shared.ShipToDaytimePhone;
+
+    row.BillToName = shared.BillToName;
+    row.BillToCompany = shared.BillToCompany;
+    row.BillToAddressLine1 = shared.BillToAddressLine1;
+    row.BillToAddressLine2 = shared.BillToAddressLine2;
+    row.BillToAddressLine3 = shared.BillToAddressLine3;
+    row.BillToCity = shared.BillToCity;
+    row.BillToState = shared.BillToState;
+    row.BillToPostalCode = shared.BillToPostalCode;
+    row.BillToCounty = shared.BillToCounty;
+    row.BillToCountry = shared.BillToCountry;
+    row.BillToEmail = shared.BillToEmail;
+    row.BillToDaytimePhone = shared.BillToDaytimePhone;
+
+    row.SKU = line.SKU;
+    row.UOM = "EA";
+    row.OrderQty = line.OrderQty;
+    row.ShipQty = "0";
+    row.OpenQty = line.OrderQty;
+    row.Price = line.Price;
+    row.ExtAmount = line.ExtAmount;
+    row.Stockable = "TRUE";
+    row.Taxable = "TRUE";
+    row.Costable = "TRUE";
+    row.IsProfit = "TRUE";
+
+    return row;
   }
 
   function validateGeneratedOrders(rows, summary) {
@@ -115,13 +122,14 @@
       }
       sequenceTracker[orderDate].add(sequence);
 
-      if (!skuTracker[row.ChannelOrderID]) {
-        skuTracker[row.ChannelOrderID] = new Set();
+      const orderIdentifier = row.OrderNumber || row.ChannelOrderID;
+      if (!skuTracker[orderIdentifier]) {
+        skuTracker[orderIdentifier] = new Set();
       }
-      if (skuTracker[row.ChannelOrderID].has(row.SKU)) {
-        throw validators.createError("INVALID_FORMAT", `Duplicate SKU ${row.SKU} within order ${row.ChannelOrderID}.`);
+      if (skuTracker[orderIdentifier].has(row.SKU)) {
+        throw validators.createError("INVALID_FORMAT", `Duplicate SKU ${row.SKU} within order ${orderIdentifier}.`);
       }
-      skuTracker[row.ChannelOrderID].add(row.SKU);
+      skuTracker[orderIdentifier].add(row.SKU);
     });
 
     Object.entries(summary.ordersPerDate).forEach(([date, count]) => {
@@ -138,16 +146,10 @@
   }
 
   async function generateSalesOrders(options) {
-    validators.validateRequiredFiles({
-      customerFile: options.customerFile,
-      mappingFile: options.mappingFile,
-      skuFile: options.skuFile,
-    });
-
     const [customerSource, mappingSource, skuSource] = await Promise.all([
-      fileIO.readFile(options.customerFile),
-      fileIO.readFile(options.mappingFile),
-      fileIO.readFile(options.skuFile),
+      options.customerFile ? fileIO.readFile(options.customerFile) : Promise.resolve(fileIO.parseDefaultData(app.defaultData.customer, "Customer_source.csv")),
+      options.mappingFile ? fileIO.readFile(options.mappingFile) : Promise.resolve(fileIO.parseDefaultData(app.defaultData.mapping, "Customer-Channel-ChannelAccountMapping.csv")),
+      options.skuFile ? fileIO.readFile(options.skuFile) : Promise.resolve(fileIO.parseDefaultData(app.defaultData.sku, "SKU_Only.csv")),
     ]);
 
     validators.validateColumns(customerSource.rows, CUSTOMER_REQUIRED_COLUMNS, customerSource.fileName);
@@ -172,19 +174,10 @@
       const customerCode = String(row.CustomerCode || "").trim();
       const mappings = mappingLookup[customerCode] || [];
 
-      if (mappings.length !== 1 || utils.isBlank(mappings[0].Channel)) {
-        skipReports.push({
-          CustomerCode: customerCode,
-          CustomerName: row.CustomerName || "",
-          Reason: mappings.length === 0 ? "UNMAPPED_CUSTOMER" : mappings.length > 1 ? "AMBIGUOUS_MAPPING" : "MISSING_CHANNEL",
-        });
-        return accumulator;
-      }
-
       accumulator.push({
         ...row,
         Type: normalizeCustomerType(row.Type),
-        mapping: mappings[0],
+        mapping: mappings.length > 0 ? mappings[0] : { ChannelNum: "", ChannelAccountNum: "", Channel: "" },
       });
       return accumulator;
     }, []);
@@ -224,12 +217,18 @@
         const shipTo = addressEngine.populateShipTo(customer);
         const billTo = addressEngine.populateBillTo(customer, shipTo);
         const { lines, totals } = pricingEngine.createLineItems(selectedSkus, customer.Type);
+        const [yyyy, mm, dd] = descriptor.isoDate.split('-');
+        const yy = yyyy.slice(-2);
+        const yymmddDate = `${yy}${mm}${dd}`;
+        const chNum = customer.mapping.ChannelNum;
+        const seqStr = String(sequence).padStart(6, '0');
+        const channelOrderID = chNum ? `${chNum}-${yymmddDate}-${seqStr}` : "";
+
         const shared = {
           OrderNumber: `${descriptor.compactDate}-${sequence}`,
-          ChannelOrderID: utils.generateUUID(),
+          ChannelOrderID: channelOrderID,
           CustomerCode: customer.CustomerCode,
           CustomerName: customer.CustomerName,
-          Channel: customer.mapping.Channel,
           ChannelNum: customer.mapping.ChannelNum,
           ChannelAccountNum: customer.mapping.ChannelAccountNum,
           OrderDate: descriptor.isoDate,
