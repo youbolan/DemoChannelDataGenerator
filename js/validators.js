@@ -43,6 +43,7 @@
   ];
 
   const SHIPMENT_ALIAS_GROUPS = {
+    OrderNumber: ["OrderNumber", "Order Number", "S/O #"],
     ChannelOrderID: ["ChannelOrderID", "Channel Order ID", "channelOrderID"],
     OrderQty: ["OrderQty", "Order Qty"],
     Channel: ["Channel"],

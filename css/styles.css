@@ -106,6 +106,32 @@ legend {
   gap: 16px;
 }
 
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.form-row > * {
+  flex: 1;
+  min-width: 220px;
+}
+
+.form-row.align-end {
+  align-items: flex-end;
+}
+
+.inline-buttons {
+  display: flex;
+  gap: 16px;
+}
+
+.inline-buttons button {
+  flex: 1;
+  margin-top: 0;
+}
+
 .field {
   display: flex;
   flex-direction: column;

@@ -39,7 +39,7 @@
 
   function groupByOrder(rows) {
     return rows.reduce((accumulator, row, index) => {
-      const key = row.ChannelOrderID;
+      const key = row.OrderNumber || row.ChannelOrderID || `idx_${index}`;
       if (!accumulator[key]) {
         accumulator[key] = [];
       }
@@ -169,10 +169,11 @@
 
     const channelRows = buildChannelRows(normalizedRows, updatedRows, options.shipmentDate);
     const groupedByChannel = channelRows.reduce((accumulator, entry) => {
-      if (!accumulator[entry.Channel]) {
-        accumulator[entry.Channel] = [];
+      const channelName = entry.Channel || "Uncategorized";
+      if (!accumulator[channelName]) {
+        accumulator[channelName] = [];
       }
-      accumulator[entry.Channel].push(entry.values);
+      accumulator[channelName].push(entry.values);
       return accumulator;
     }, {});
 
