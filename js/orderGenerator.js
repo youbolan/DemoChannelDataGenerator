@@ -18,6 +18,11 @@
   }
 
   function isCustomerEligible(customer, weekday) {
+    const code = String(customer.CustomerCode || "").toLowerCase();
+    if (code.startsWith("wh-") || code.startsWith("re-") || code.startsWith("cu-")) {
+      return weekday === 3 || weekday === 5;
+    }
+
     const type = normalizeCustomerType(customer.Type);
     if (type === "Retail") {
       return weekday === 1;
@@ -216,7 +221,7 @@
         const selectedSkus = skuRoundRobin.drawUnique(skuCount);
         const shipTo = addressEngine.populateShipTo(customer);
         const billTo = addressEngine.populateBillTo(customer, shipTo);
-        const { lines, totals } = pricingEngine.createLineItems(selectedSkus, customer.Type);
+        const { lines, totals } = pricingEngine.createLineItems(selectedSkus, customer.Type, customer.CustomerCode);
         const [yyyy, mm, dd] = descriptor.isoDate.split('-');
         const yy = yyyy.slice(-2);
         const yymmddDate = `${yy}${mm}${dd}`;

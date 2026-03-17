@@ -136,6 +136,7 @@
       const updated = updatedRows[index];
       return {
         Channel: row.Channel,
+        CustomerNumber: row.CustomerNumber,
         values: {
           "Channel Order ID": row.ChannelOrderID,
           "Ship Date": shipmentDate,
@@ -169,7 +170,7 @@
 
     const channelRows = buildChannelRows(normalizedRows, updatedRows, options.shipmentDate);
     const groupedByChannel = channelRows.reduce((accumulator, entry) => {
-      const channelName = entry.Channel || "Uncategorized";
+      const channelName = entry.Channel || entry.CustomerNumber || "Uncategorized";
       if (!accumulator[channelName]) {
         accumulator[channelName] = [];
       }

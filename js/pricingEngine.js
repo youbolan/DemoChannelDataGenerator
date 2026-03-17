@@ -2,37 +2,58 @@
   const app = global.DemoChannelDataGenerator || (global.DemoChannelDataGenerator = {});
   const utils = app.utils;
 
-  function getTypeConfig(customerType) {
+  function getTypeConfig(customerType, customerCode) {
+    let config;
     switch ((customerType || "Ecommerce").toLowerCase()) {
       case "retail":
-        return {
+        config = {
           qtyMin: 2,
           qtyMax: 8,
           totalMin: 90,
           totalMax: 300,
           priceMultiplier: () => 0.8,
         };
+        break;
       case "wholesale":
-        return {
+        config = {
           qtyMin: 4,
           qtyMax: 16,
           totalMin: 180,
           totalMax: 600,
           priceMultiplier: () => utils.randomInt(50, 60) / 100,
         };
+        break;
       default:
-        return {
+        config = {
           qtyMin: 1,
           qtyMax: 4,
           totalMin: 45,
           totalMax: 150,
           priceMultiplier: () => 1,
         };
+        break;
     }
+
+    const code = String(customerCode || "").toLowerCase();
+    if (code.startsWith("wh-")) {
+      config.totalMax = 350;
+    } else if (code.startsWith("re-")) {
+      config.totalMax = 200;
+    } else if (code.startsWith("cu-")) {
+      config.totalMax = 180;
+    } else {
+      config.totalMax = 105;
+    }
+
+    if (config.totalMin > config.totalMax) {
+      config.totalMin = config.totalMax;
+    }
+
+    return config;
   }
 
-  function createLineItems(skus, customerType) {
-    const config = getTypeConfig(customerType);
+  function createLineItems(skus, customerType, customerCode) {
+    const config = getTypeConfig(customerType, customerCode);
     const shippingAmount = Math.random() <= 0.9 ? utils.roundCurrency(utils.randomInt(0, 1800) / 100) : 0;
 
     for (let attempt = 0; attempt < 300; attempt += 1) {
