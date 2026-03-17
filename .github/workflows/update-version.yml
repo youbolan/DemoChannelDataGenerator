@@ -1,0 +1,30 @@
+name: Auto-Update Version
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - 001-channel-data-generator
+
+jobs:
+  update-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Update version.txt
+        run: |
+          SHORT_SHA="${GITHUB_SHA::7}"
+          echo "v1.0.0-$SHORT_SHA" > version.txt
+          
+      - name: Commit and Push Changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: auto-update version.txt to v1.0.0-${{ github.sha }} [skip ci]"
+          file_pattern: "version.txt"
