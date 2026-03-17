@@ -18,13 +18,13 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
 
-      - name: Update version.txt
+      - name: Update js/version.js
         run: |
           SHORT_SHA="${GITHUB_SHA::7}"
-          echo "v1.0.0-$SHORT_SHA" > version.txt
+          echo "window.APP_VERSION = 'v1.0.0-$SHORT_SHA';" > js/version.js
           
       - name: Commit and Push Changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore: auto-update version.txt to v1.0.0-${{ github.sha }} [skip ci]"
-          file_pattern: "version.txt"
+          commit_message: "chore: auto-update version to v1.0.0-${{ github.sha }} [skip ci]"
+          file_pattern: "js/version.js"
