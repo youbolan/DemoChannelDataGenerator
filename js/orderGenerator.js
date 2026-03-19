@@ -51,7 +51,18 @@
     });
 
     row.OrderNumber = shared.OrderNumber;
-    row.OrderType = "1";
+    
+    const code = String(shared.CustomerCode || "").toLowerCase();
+    if (code.startsWith("cu-")) {
+      row.OrderType = "3";
+    } else if (code.startsWith("re-")) {
+      row.OrderType = "8";
+    } else if (code.startsWith("wh-")) {
+      row.OrderType = "0";
+    } else {
+      row.OrderType = "1";
+    }
+
     row.OrderStatus = "0";
     row.OrderDate = shared.OrderDate;
     row.CustomerCode = shared.CustomerCode;
