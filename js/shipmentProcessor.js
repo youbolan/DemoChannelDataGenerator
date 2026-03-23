@@ -134,11 +134,17 @@
   function buildChannelRows(normalizedRows, updatedRows, shipmentDate) {
     return normalizedRows.map((row, index) => {
       const updated = updatedRows[index];
+      
+      let channelOrderID = row.ChannelOrderID;
+      if (row.CustomerNumber && /^(re-|wh-|cu-)/i.test(row.CustomerNumber)) {
+        channelOrderID = row.OrderNumber || row.ChannelOrderID;
+      }
+      
       return {
         Channel: row.Channel,
         CustomerNumber: row.CustomerNumber,
         values: {
-          "Channel Order ID": row.ChannelOrderID,
+          "Channel Order ID": channelOrderID,
           "Ship Date": shipmentDate,
           TimeZone: "UTC-8",
           Carrier: updated.Carrier || row.Carrier || "",
@@ -170,7 +176,10 @@
 
     const channelRows = buildChannelRows(normalizedRows, updatedRows, options.shipmentDate);
     const groupedByChannel = channelRows.reduce((accumulator, entry) => {
-      const channelName = entry.Channel || entry.CustomerNumber || "Uncategorized";
+      let channelName = entry.Channel || entry.CustomerNumber || "Uncategorized";
+      if (entry.CustomerNumber && /^(re-|wh-|cu-)/i.test(entry.CustomerNumber)) {
+        channelName = "General";
+      }
       if (!accumulator[channelName]) {
         accumulator[channelName] = [];
       }
